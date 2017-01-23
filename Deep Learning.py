@@ -20,6 +20,7 @@ from scipy import ndimage
 from sklearn.linear_model import LogisticRegression
 from six.moves.urllib.request import urlretrieve
 from six.moves import cPickle as pickle
+from sklearn import metrics
 
 os.chdir("C:\Sreedhar\Python\Code\Deep Learning")
 
@@ -93,6 +94,29 @@ def maybe_extract(filename, force=False):
   
 train_folders = maybe_extract(train_filename)
 test_folders = maybe_extract(test_filename)
+
+#-------------------------------------------------------------------------------------------
+#Problem 1
+#Let's take a peek at some of the data to make sure it looks sensible. Each exemplar should be an 
+#image of a character A through J rendered in a different font. Display a sample of the images 
+#that we just downloaded. Hint: you can use the package IPython.display.
+
+image1 = 'notMNIST_large\\A\\a29ydW5pc2hpLnR0Zg==.png'
+img1 = ndimage.imread(image1) #Read the image
+#Below command turns on inline plotting for IPython, where plot graphics will appear in your notebook.
+#%matplotlib inline
+
+#display the image without scaling
+plt.imshow(img1)
+
+#Scale and center the data
+pixel_depth = 255.0
+img1 = (img1 - pixel_depth/2)/pixel_depth
+#Display the image after scaling
+plt.imshow(img1)
+
+#Result: Both the images look same
+
 #-------------------------------------------------------------------------------------------
 #Now let's load the data in a more manageable format. Since, depending on your computer setup you 
 #might not be able to fit it all in memory, we'll load each class into a separate dataset, store 
@@ -160,20 +184,28 @@ test_datasets  = maybe_pickle(test_folders, 1800)
 #Let's verify that the data still looks good. Displaying a sample of the labels and images from 
 #the ndarray. Hint: you can use matplotlib.pyplot.
 
-image1 = 'notMNIST_large\\A\\a29ydW5pc2hpLnR0Zg==.png'
-img1 = ndimage.imread(image1) #Read the image
-#Below command turns on inline plotting for IPython, where plot graphics will appear in your notebook.
-#%matplotlib inline
+#Now, to retrieve a normalized image, we need to read back a pickle file (there is one per 
+#dataset folder or letter) into a tensor and grab a slice from it. 
 
-#display the image without scaling
-plt.imshow(img1)
+pickle_file = train_datasets[0] # index 0 should be all As, 1 = all Bs, etc.
+with open(pickle_file, 'rb') as f:
+    letter_set = pickle.load(f)  # unpickle
+    sample_idx = np.random.randint(len(letter_set))  # pick a random image index
+    sample_img = letter_set[sample_idx, :, :]  # extract a 2D slice
+    plt.figure()
+    plt.imshow(sample_img)
+#-------------------------------------------------------------------------------------------------
+#Problem 3
+#Another check: we expect the data to be balanced across classes. Verify that.
 
-#Scale and center the data
-img1 = (img1 - pixel_depth/2)/pixel_depth
-#Display the image after scaling
-plt.imshow(img1)
+letter_len = []
+for label, pickle_file in enumerate(train_datasets):
+    with open(pickle_file, 'rb') as f:
+        letter_set = pickle.load(f)
+        letter_len.append(len(letter_set))
 
-#Result: Both the images look same
+print(letter_len)
+#Ans = [52909, 52911, 52912, 52911, 52912, 52912, 52912, 52912, 52912, 52911]
 
 #-------------------------------------------------------------------------------------------------
 #Merge and prune the training data as needed. Depending on your computer setup, you might not be
@@ -269,22 +301,113 @@ test_dataset,  test_labels  = randomize(test_dataset, test_labels)
 pickle_file = 'notMNIST.pickle'
 
 try:
-  f = open(pickle_file, 'wb')
-  save = {
-    'train_dataset': train_dataset,
-    'train_labels': train_labels,
-    'valid_dataset': valid_dataset,
-    'valid_labels': valid_labels,
-    'test_dataset': test_dataset,
-    'test_labels': test_labels,
-    }
-  pickle.dump(save, f, pickle.HIGHEST_PROTOCOL)
-  f.close()
+    f = open(pickle_file, 'wb')
+    save = {
+        'train_dataset': train_dataset, 
+        'train_labels': train_labels,
+        'valid_dataset': valid_dataset,
+        'valid_labels': valid_labels,
+        'test_dataset': test_dataset,
+        'test_labels': test_labels,        
+        }
+    pickle.dump(save, f, pickle.HIGHEST_PROTOCOL)    
+    f.close()
 except Exception as e:
-  print('Unable to save data to', pickle_file, ':', e)
-  raise
+    print('unable to save data to', pickle_file, ':', e)
+    raise
+#--------------------------------------------------------------------------------------------
 
-  
+stat_info = os.stat(pickle_file)    
+print('Compressed Pickle size:', stat_info.st_size)
+
+#---------------------------------------------------------------------------------------------
+#building a logistic regression model
+#---------------------------------------------------------------------------------------------
+#Logistic regression model on 50 rows
+y = train_labels[0:50]
+
+#train_dataset.shape = (200000, 28, 28)
+train1 = train_dataset[0:50, :, :]
+#train1.shape = (50, 28, 28)
+#Logistic regression cannot be built on a 3 Dimensional arrary. So reducing the dimensions to 2.
+train1 = train1.reshape(50, 28*28)
+#train1.shape = (50, 784)
+
+#Build model
+model1_50 = LogisticRegression()
+model1_50 = model1_50.fit(train1, y)
+
+#check the model performance on training data
+model1_50.score(train1, y)
+#ans = 1.0
+
+#check the accuracy on validation dataset
+validation_x = valid_dataset[0:50, :, :]
+validation_x = validation_x.reshape(50, 28*28)
+validation_y = valid_labels[0:50]
+
+predicted = model1_50.predict(validation_x)
+metrics.accuracy_score(validation_y, predicted) # = 0.34000000000000002
+
+#---------------------------------------------------------------------------------------------
+#building a logistic regression model with 1000 samples
+#---------------------------------------------------------------------------------------------
+#Logistic regression model on 1000 rows
+y = train_labels[0:1000]
+
+#train_dataset.shape = (200000, 28, 28)
+train1 = train_dataset[0:1000, :, :]
+#train1.shape = (1000, 28, 28)
+#Logistic regression cannot be built on a 3 Dimensional arrary. So reducing the dimensions to 2.
+train1 = train1.reshape(1000, 28*28)
+#train1.shape = (1000, 784)
+
+#Build model
+model2_1000 = LogisticRegression()
+model2_1000 = model2_1000.fit(train1, y)
+
+#check the model performance on training data
+model2_1000.score(train1, y)
+#ans = 0.997
+
+#check the accuracy on validation dataset
+validation_x = valid_dataset[0:1000, :, :]
+validation_x = validation_x.reshape(1000, 28*28)
+validation_y = valid_labels[0:1000]
+
+predicted = model2_1000.predict(validation_x)
+metrics.accuracy_score(validation_y, predicted) #ans = 0.77100000000000002
+
+#---------------------------------------------------------------------------------------------
+#building a logistic regression model with entire samples
+#---------------------------------------------------------------------------------------------
+#Logistic regression model on 1000 rows
+y = train_labels
+
+#train_dataset.shape = (200000, 28, 28)
+train1 = train_dataset
+#train1.shape = (200000, 28, 28)
+#Logistic regression cannot be built on a 3 Dimensional arrary. So reducing the dimensions to 2.
+train1 = train1.reshape(len(train_dataset), 28*28)
+#train1.shape = (1000, 784)
+
+#Build model
+model3_all = LogisticRegression()
+model3_all = model3_all.fit(train1, y)
+
+#check the model performance on training data
+model3_all.score(train1, y)
+#ans = 0.997
+
+#check the accuracy on validation dataset
+validation_x = valid_dataset
+validation_x = validation_x.reshape(len(valid_dataset), 28*28)
+validation_y = valid_labels
+
+predicted = model3_all.predict(validation_x)
+metrics.accuracy_score(validation_y, predicted) #ans = 0.77100000000000002
+
+
 
 
     
