@@ -389,7 +389,7 @@ train1 = train_dataset
 #train1.shape = (200000, 28, 28)
 #Logistic regression cannot be built on a 3 Dimensional arrary. So reducing the dimensions to 2.
 train1 = train1.reshape(len(train_dataset), 28*28)
-#train1.shape = (1000, 784)
+#train1.shape = (200000, 784)
 
 #Build model
 model3_all = LogisticRegression()
@@ -397,7 +397,7 @@ model3_all = model3_all.fit(train1, y)
 
 #check the model performance on training data
 model3_all.score(train1, y)
-#ans = 0.997
+#ans = 
 
 #check the accuracy on validation dataset
 validation_x = valid_dataset
@@ -405,7 +405,7 @@ validation_x = validation_x.reshape(len(valid_dataset), 28*28)
 validation_y = valid_labels
 
 predicted = model3_all.predict(validation_x)
-metrics.accuracy_score(validation_y, predicted) #ans = 0.77100000000000002
+metrics.accuracy_score(validation_y, predicted) #ans = 
 
 
 
