@@ -187,24 +187,28 @@ test_datasets  = maybe_pickle(test_folders, 1800)
 #Now, to retrieve a normalized image, we need to read back a pickle file (there is one per 
 #dataset folder or letter) into a tensor and grab a slice from it. 
 
-pickle_file = train_datasets[0] # index 0 should be all As, 1 = all Bs, etc.
-with open(pickle_file, 'rb') as f:
-    letter_set = pickle.load(f)  # unpickle
-    sample_idx = np.random.randint(len(letter_set))  # pick a random image index
-    sample_img = letter_set[sample_idx, :, :]  # extract a 2D slice
-    plt.figure()
-    plt.imshow(sample_img)
+#uncomment below code to see images
+#pickle_file = train_datasets[0] # index 0 should be all As, 1 = all Bs, etc.
+#with open(pickle_file, 'rb') as f:
+#    letter_set = pickle.load(f)  # unpickle
+#    sample_idx = np.random.randint(len(letter_set))  # pick a random image index
+#    sample_img = letter_set[sample_idx, :, :]  # extract a 2D slice
+#    plt.figure()
+#    plt.imshow(sample_img)
+#
+#
 #-------------------------------------------------------------------------------------------------
 #Problem 3
 #Another check: we expect the data to be balanced across classes. Verify that.
 
-letter_len = []
-for label, pickle_file in enumerate(train_datasets):
-    with open(pickle_file, 'rb') as f:
-        letter_set = pickle.load(f)
-        letter_len.append(len(letter_set))
-
-print(letter_len)
+#Uncomment below code to run
+#letter_len = []
+#for label, pickle_file in enumerate(train_datasets):
+#    with open(pickle_file, 'rb') as f:
+#        letter_set = pickle.load(f)
+#        letter_len.append(len(letter_set))
+#
+#print(letter_len)
 #Ans = [52909, 52911, 52912, 52911, 52912, 52912, 52912, 52912, 52912, 52911]
 
 #-------------------------------------------------------------------------------------------------
@@ -379,17 +383,17 @@ predicted = model2_1000.predict(validation_x)
 metrics.accuracy_score(validation_y, predicted) #ans = 0.77100000000000002
 
 #---------------------------------------------------------------------------------------------
-#building a logistic regression model with entire samples
+#building a logistic regression model with 10000 samples
 #---------------------------------------------------------------------------------------------
-#Logistic regression model on 1000 rows
-y = train_labels
+#Logistic regression model on 10000 rows
+y = train_labels[0:10000]
 
-#train_dataset.shape = (200000, 28, 28)
-train1 = train_dataset
-#train1.shape = (200000, 28, 28)
+#train_dataset.shape = (10000, 28, 28)
+train1 = train_dataset[10000, :, :]
+#train1.shape = (10000, 28, 28)
 #Logistic regression cannot be built on a 3 Dimensional arrary. So reducing the dimensions to 2.
-train1 = train1.reshape(len(train_dataset), 28*28)
-#train1.shape = (200000, 784)
+train1 = train1.reshape(len(train1), 28*28)
+#train1.shape = (10000, 784)
 
 #Build model
 model3_all = LogisticRegression()
@@ -400,9 +404,9 @@ model3_all.score(train1, y)
 #ans = 
 
 #check the accuracy on validation dataset
-validation_x = valid_dataset
-validation_x = validation_x.reshape(len(valid_dataset), 28*28)
-validation_y = valid_labels
+validation_x = valid_dataset[0:10000, :, :]
+validation_x = validation_x.reshape(len(validation_x), 28*28)
+validation_y = valid_labels[10000,]
 
 predicted = model3_all.predict(validation_x)
 metrics.accuracy_score(validation_y, predicted) #ans = 
